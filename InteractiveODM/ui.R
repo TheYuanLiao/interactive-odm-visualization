@@ -43,9 +43,12 @@ shinyUI(fixedPage(
               a("Origin-destination data with stplanr.", 
                 href = "https://cran.r-project.org/web/packages/stplanr/vignettes/stplanr-od.html")),
             
-            p("Author of this APP: ",
+            p("Author: ",
               a("Yuan Liao", 
                 href = "https://yuanliao.netlify.app")),
+            p("Source code can be found on: .",
+              a("GitHub",
+                href = "https://github.com/TheYuanLiao/interactive-odm-visualization/tree/main/InteractiveODM"))
         ),
         
         mainPanel(
