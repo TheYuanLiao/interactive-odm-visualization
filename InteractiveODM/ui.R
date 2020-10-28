@@ -13,11 +13,6 @@ library(sf)
 library(stplanr)
 library(tmap)
 
-df <- read.csv('data/odms_by_mode.csv')
-colnames(df) <- c("ozone", "dzone", "Non-bike", "E-bike", "Bike", "Total", 'Hour')
-zones <- st_transform(st_read('data/zones_subset.shp'), crs = 4326)
-df <- df %>% filter(ozone %in% zones$zone, dzone %in% zones$zone)
-
 # Define UI for application that draws a histogram
 shinyUI(fixedPage(
 

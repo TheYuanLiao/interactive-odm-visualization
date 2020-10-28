@@ -1,0 +1,123 @@
+---
+title: 'Origin-destination explorer: a Shiny app'
+author: "Yuan Liao"
+date: "10/28/2020"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(dplyr)
+library(sf)
+library(stplanr)
+library(tmap)
+```
+
+## Transport, the big source of carbon emissions
+- "After 2030, transport is likely to become the sector with the highest emissions in the 2-degree scenario." -- Climate Change 2013 by IPCC
+
+- Increasing attention on a mode shift from car to active travelling such as biking among other low-carbon modes in cities.
+
+## How do the travel demand by biking and other modes look like?
+[Interactive ODM explorer](https://yuanliao.shinyapps.io/InteractiveODM/) is featured with:
+
+- Origin-destination matrix broken down by mode and time
+
+- Interactive visualization of OD network
+
+- Using the travel survey data collected from the Netherlands (North Holland area) which is famous for its popularity of biking
+
+## Interactive ODM explorer - Demo 1
+
+-> Below is an example of the output: 
+
+```{r demo, echo = TRUE, warning=FALSE, message=FALSE}
+df <- read.csv('InteractiveODM/data/odms_by_mode.csv')
+colnames(df) <- c("ozone", "dzone", "Non-bike", "E-bike", "Bike", "Total", 'Hour')
+zones <- st_transform(st_read('InteractiveODM/data/zones_subset.shp', quiet = TRUE), crs = 4326)
+df <- df %>% filter(ozone %in% zones$zone, dzone %in% zones$zone)
+
+input <- list()
+input$mode <- "Non-bike"
+input$hour <- 24
+
+df_a <- df %>%
+  select(c('ozone', 'dzone', !!input$mode, 'Total', 'Hour')) %>%
+  filter(ozone != dzone,
+         Hour == input$hour) %>%
+  mutate(trip = get(input$mode) / sum(get(input$mode)) * 100) %>%
+  filter(trip > 0) %>%
+  mutate(share = get(input$mode) / Total * 100)
+
+l <- od2line(flow = df_a, zones = zones)
+
+l <- l %>%
+  arrange(trip)
+
+tm_shape(zones) +
+  tm_fill(col="grey35") +
+  tm_borders("white", alpha=.2) + 
+tm_shape(l) +
+  tm_lines(
+    palette = "plasma", 
+    trans = "log10", style="cont",
+    lwd = "trip",
+    scale = 9,
+    title.lwd = 0.5,
+    alpha = 0.5,
+    col = "share",
+    title = "Mode share (%)",
+    legend.lwd.show = FALSE
+  ) +
+  tm_scale_bar() +
+  tm_layout(
+    frame = FALSE,
+    legend.bg.alpha = 0.5,
+    legend.bg.color = "white"
+  )
+```
+
+## Interactive ODM explorer - Demo 2
+-> Below is another example of the output: the Bike trips at 8 am
+
+```{r demo2, echo = FALSE, warning=FALSE, message=FALSE}
+input <- list()
+input$mode <- "Bike"
+input$hour <- 8
+
+df_a <- df %>%
+  select(c('ozone', 'dzone', !!input$mode, 'Total', 'Hour')) %>%
+  filter(ozone != dzone,
+         Hour == input$hour) %>%
+  mutate(trip = get(input$mode) / sum(get(input$mode)) * 100) %>%
+  filter(trip > 0) %>%
+  mutate(share = get(input$mode) / Total * 100)
+
+l <- od2line(flow = df_a, zones = zones)
+
+l <- l %>%
+  arrange(trip)
+
+tm_shape(zones) +
+  tm_fill(col="grey35") +
+  tm_borders("white", alpha=.2) + 
+tm_shape(l) +
+  tm_lines(
+    palette = "plasma", 
+    trans = "log10", style="cont",
+    lwd = "trip",
+    scale = 9,
+    title.lwd = 0.5,
+    alpha = 0.5,
+    col = "share",
+    title = "Mode share (%)",
+    legend.lwd.show = FALSE
+  ) +
+  tm_scale_bar() +
+  tm_layout(
+    frame = FALSE,
+    legend.bg.alpha = 0.5,
+    legend.bg.color = "white"
+  )
+```
+

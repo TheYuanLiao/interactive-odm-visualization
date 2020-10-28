@@ -11,8 +11,12 @@ library(shiny)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-
-    l <- reactive({
+    df <- read.csv('data/odms_by_mode.csv')
+    zones <- st_transform(st_read('data/zones_subset.shp'), crs = 4326)
+    colnames(df) <- c("ozone", "dzone", "Non-bike", "E-bike", "Bike", "Total", 'Hour')
+    df <- df %>% filter(ozone %in% zones$zone, dzone %in% zones$zone)
+    
+    odm <- reactive({
         # Subsetting data based on input$mode and input$hour from ui.R
         md <- input$mode
         hr <- ifelse(input$time == 0, 24, input$hour)
@@ -23,9 +27,9 @@ shinyServer(function(input, output) {
             mutate(trip = get(md) / sum(get(md)) * 100) %>%
             filter(trip > 0) %>%
             mutate(share = get(md) / Total * 100)
-        l <- od2line(flow = df_a, zones = zones)
-        
-        arrange(l, trip)
+        lines <- od2line(flow = df_a, zones = zones)
+        lines <- arrange(lines, trip)
+        return(lines)
     })
 
     output$netPlot <- renderPlot({
@@ -33,7 +37,7 @@ shinyServer(function(input, output) {
         tm_shape(zones) +
             tm_fill(col="grey35") +
             tm_borders("white", alpha=.2) + 
-            tm_shape(l()) +
+            tm_shape(odm()) +
             tm_lines(
                 palette = "plasma", 
                 trans = "log10", style="cont",
